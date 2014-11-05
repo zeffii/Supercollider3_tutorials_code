@@ -111,6 +111,24 @@ s.sampleRate;
 // hold a reference to a folder
 ~folder = PathName.new("/full/path/to/");
 
-// return a list of filenames of sounds in that folder
+// return a list of filenames of all files in that folder (inclucing non sound)
 ~folder.entries;
 
+// this is my folder with sounds..store a reference to the string (optional)
+~rawfolder = "C:/Users/dealga/Desktop/code/supercollider/sounds"
+// iterate over the entires
+~folder = PathName.new(~rawfolder);
+~folder.entries;
+
+//using parens here just to be able to execute the whole thing in one go.
+(
+~folder.entries.do{
+	arg path;
+	~bells = ~bells.add(Buffer.read(s, path.fullPath));  //this concatenates ~folder + path
+}
+)
+
+// I have 3 sounds in this directory, so prove that the above code loaded them into the Array.
+~bells[0].play;
+~bells[1].play;
+~bells[2].play;
