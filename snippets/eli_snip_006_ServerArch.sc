@@ -1,4 +1,4 @@
-// eli_snip_006
+// eli_snip_006 (Tut 7)
 
 s.boot
 s.plotTree;
@@ -149,9 +149,113 @@ y.free;
 x = Synth.new(\blip, [\out, ~reverbBus], s);
 y = Synth.new(\reverb, [\in, ~reverbBus], x, \addAfter); // see x
 
-// 5 convenience methods for addAction:
+// 5 convenience methods for addAction: (work for Synth and Group)
 // \addToHead, \addToTail, \addAfter, \addBefore, \addReplace
+// can be written as
+Synth.after(\reverb, [\in, ~reverbBus], x);
+Synth.before(...);
+Synth.head(...);
+Synth.tail(\reverb, [\in, ~reverbBus], s,);
+Synth.replace(...);
 
+~sourceGroup = Group.new;
+~fxGroup = Group.after(~sourceGroup);
+
+/////
+///// adding arguments to the blip synth, unnamed synths added to group
+///// (unnamed instances of \blip synth)
+
+~sourceGroup = Group.new;
+~fxGroup = Group.after(~sourceGroup);
+~reverbBus2 = Bus.audio(s, 2);  //stereo. belongs to local server s
+y = Synth.new(\reverb, [\in, ~reverbBus2], ~fxGroup);
+
+(
+SynthDef.new(\blip, {
+	arg out, fund=100, dens=2, decay=0.2;
+	var freq, trig, sig;
+	freq = LFNoise0.kr(3).exprange(fund, fund*4).round(fund);
+	sig = SinOsc.ar(freq) * 0.25;
+	trig = Dust.kr(dens);
+	sig = sig * EnvGen.kr(Env.perc(0.01, decay), trig);
+	sig = Pan2.ar(sig, LFNoise1.kr(10));
+	Out.ar(out, sig);
+
+}).add;
+
+SynthDef.new(\reverb, {
+	arg in, out=0;
+	var sig;
+	sig = In.ar(in, 2);  // duo channel now!
+	sig = FreeVerb.ar(sig, 0.5, 0.8, 0.2);  // no need to dup
+	Out.ar(out, sig);
+}).add;
+)
+
+(
+8.do{
+	Synth.new(
+		\blip,
+		[
+			\out, ~reverbBus2,
+			\fund, exprand(60, 300).round(30)
+		],
+		~sourceGroup
+	);
+}
+)
+
+//
+// sending messages to all synths in a group
+// using ~sourceGroup.set(
+
+~sourceGroup = Group.new;
+~fxGroup = Group.after(~sourceGroup);
+~reverbBus2 = Bus.audio(s, 2);  //stereo. belongs to local server s
+y = Synth.new(\reverb, [\in, ~reverbBus2], ~fxGroup);
+
+(
+SynthDef.new(\blip, {
+	arg out, fund=100, dens=2, decay=0.2;
+	var freq, trig, sig;
+	freq = LFNoise0.kr(3).exprange(fund, fund*4).round(fund);
+	sig = SinOsc.ar(freq) * 0.25;
+	trig = Dust.kr(dens);
+	sig = sig * EnvGen.kr(Env.perc(0.01, decay), trig);
+	sig = Pan2.ar(sig, LFNoise1.kr(10));
+	Out.ar(out, sig);
+
+}).add;
+
+SynthDef.new(\reverb, {
+	arg in, out=0;
+	var sig;
+	sig = In.ar(in, 2);  // duo channel now!
+	sig = FreeVerb.ar(sig, 0.5, 0.8, 0.2);  // no need to dup
+	Out.ar(out, sig);
+}).add;
+)
+
+(
+8.do{
+	Synth.new(
+		\blip,
+		[
+			\out, ~reverbBus2,
+			\fund, exprand(60, 300).round(30)
+		],
+		~sourceGroup
+	);
+}
+)
+
+~sourceGroup.set(\decay, 1.2);
+~sourceGroup.set(\dens, 0.2);
+
+/// if you want to free all nodes in a group
+~sourceGroup.freeAll;
+
+// End. of Tut 7.
 
 
 
