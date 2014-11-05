@@ -203,3 +203,43 @@ SynthDef.new(\playbuf_test, {
 Synth.new(\playbuf_test, [\buf, ~bells[0].bufnum]);
 Synth.new(\playbuf_test, [\buf, ~bells[1].bufnum]);
 
+// /////////
+
+// rate!!!
+(
+SynthDef.new(\playbuf_test, {
+	arg amp=1, out=0, buf, rate=1, da=2;
+	var sig;
+	sig = PlayBuf.ar(2, buf, rate, doneAction:da);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+Synth.new(\playbuf_test, [\buf, ~bells[0].bufnum, \rate, 2]);
+Synth.new(\playbuf_test, [\buf, ~bells[1].bufnum, \rate, 1.2]);
+
+// warning: specify rate with number is not foolproof if bufsamprate is
+// different from serversamprate. It will be resampled, and you'll get
+// the same played back at a pitch that you might not expect for rate==1.
+// (sample with higher sample rate that serverrate will sound like its
+// playing back slower) - reasons obvious.
+
+// luckly there are Ugens that do this converting for us. Buffer->Info
+// one ugen called 'BufRateScale' outputs a ratio based on server
+// and buffer sample rate
+
+(
+SynthDef.new(\playbuf_test, {
+	arg amp=1, out=0, buf, rate=1, da=2;
+	var sig;
+	sig = PlayBuf.ar(2, buf, BufRateScale.kr(buf) * rate, doneAction:da);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+Synth.new(\playbuf_test, [\buf, ~bells[0].bufnum, \rate, 2]);
+Synth.new(\playbuf_test, [\buf, ~bells[1].bufnum, \rate, 1.2]);
+
+
