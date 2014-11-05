@@ -116,10 +116,11 @@ SynthDef.new(\reverb, {
 // it will instead return the lowest index it references.
 
 // See help->Bus object |||| this is a big topic ||||
+s.plotTree;
 
 ~reverbBus = Bus.audio(s, 2);  //stereo. belongs to local server s
-y = Synth.new(\reverb, [\in, ~reverbBus]);
-x = Synth.new(\blip, [\out, ~reverbBus]);
+y = Synth.new(\reverb, [\in, ~reverbBus]);   // do first
+x = Synth.new(\blip, [\out, ~reverbBus]);    // do second.
 x.free;
 y.free;
 
