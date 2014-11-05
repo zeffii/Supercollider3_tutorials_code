@@ -119,6 +119,9 @@ SynthDef.new(\reverb, {
 s.plotTree;
 
 ~reverbBus = Bus.audio(s, 2);  //stereo. belongs to local server s
+
+// the default behaviour called 'addAction' of Synth.new
+// is to add new nodes to the head.
 y = Synth.new(\reverb, [\in, ~reverbBus]);   // do first
 x = Synth.new(\blip, [\out, ~reverbBus]);    // do second.
 x.free;
@@ -126,7 +129,29 @@ y.free;
 
 
 ///////// Groups
-Tut7 15:07
+Tut7 14:00
+
+// whenever you boot a server you get a default node group.
+// adding a group node, looks at the node tree with s.plotTree;
+g = Group.new;
+g.free;
+
+// also specify which group (s, default group)
+// in this example it doesn't make a different which line is run first.
+// because reverb is added to tail, it will always have audio incoming.
+y = Synth.new(\reverb, [\in, ~reverbBus], s, \addToTail);
+x = Synth.new(\blip, [\out, ~reverbBus], s);
+x.free;
+y.free;
+
+// another way to place these synths in order is to specify which Synth
+// we want to place the effect after. we add reverb after blip (x) synth.
+x = Synth.new(\blip, [\out, ~reverbBus], s);
+y = Synth.new(\reverb, [\in, ~reverbBus], x, \addAfter); // see x
+
+// 5 convenience methods for addAction:
+// \addToHead, \addToTail, \addAfter, \addBefore, \addReplace
+
 
 
 
