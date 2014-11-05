@@ -455,6 +455,90 @@ Synth.new(\bufrd_test, [
 	\end, 0
 ]);
 
+// what if we want to loop? we choose phaser.
+// it's a linear ramp oscillator with inputs for [start, end, rate]
 
+~fullpath = "C:/Users/dealga/Desktop/code/supercollider/sounds/snap_miller.wav"; // pd
+~b5 = Buffer.read(s, ~fullpath);
+
+(
+SynthDef.new(\bufrd_loop, {
+	arg amp=1, out=0, buf, start, end, rate=1;
+	var sig, ptr;
+	ptr = Phasor.ar(
+		0, //trig
+		BufRateScale.kr(buf) * rate,
+		start,
+		end);
+	sig = BufRd.ar(2, buf, ptr);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+x = Synth.new(\bufrd_loop, [\buf, ~b5.bufnum, \start, 0, \end, ~b5.numFrames-1]);
+
+x.set(\start, ~b5.numFrames/2, \end, ~b5.numFrames-1); // relative to the sample
+x.set(\start, 200, \end, 2000);                        // exact into the sample
+x.set(\rate, -7.midiratio);                            // rate via midi ratio
+
+x.free;
+
+///// There are other ways to get through a Buf   `Sweep and LFSaw`
+
+// or SinOsc :) as long as the ugen outputs the appropriate range
+
+~fullpath = "C:/Users/dealga/Desktop/code/supercollider/sounds/original_ride.wav"; // pd
+~b5 = Buffer.read(s, ~fullpath);
+
+(
+SynthDef.new(\bufrd_sine, {
+	arg amp=1, out=0, buf, start, end, freq=1;
+	var sig, ptr;
+	ptr = SinOsc.ar(freq, 3pi/2).range(start, end);
+	sig = BufRd.ar(2, buf, ptr);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+// like a turntable finger release.
+x = Synth.new(\bufrd_sine, [\buf, ~b5.bufnum, \start, 0, \end, ~b5.numFrames-1, \freq, 0.2]);
+x.free;
+
+///////// or use Noise to select sections to play and different frequencies and rate (neg or pos)
+
+(
+SynthDef.new(\bufrd_noise, {
+	arg amp=1, out=0, buf, start, end, freq=1;
+	var sig, ptr;
+	ptr = LFDNoise1.ar(freq).range(start, end);
+	sig = BufRd.ar(2, buf, ptr);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+// every second it will play at different location and rate of rate=1,  2=double change etc.
+x = Synth.new(\bufrd_noise, [\buf, ~b5.bufnum, \start, 0, \end, ~b5.numFrames-1, \freq, 1]);
+x.free;
+
+// with different samples + synths one might layer these effects for a rich texture
+// higher \freq will mean the playback head will jump sooner and create a more glitchy sound.
+w = Synth.new(\bufrd_noise, [\buf, ~b0.bufnum, \start, 0, \end, ~b0.numFrames-1, \freq, 0.7, \amp. 0.9]);
+x = Synth.new(\bufrd_noise, [\buf, ~b1.bufnum, \start, 0, \end, ~b1.numFrames-1, \freq, 1.1, \amp. 0.8]);
+y = Synth.new(\bufrd_noise, [\buf, ~b2.bufnum, \start, 0, \end, ~b2.numFrames-1, \freq, 1.3, \amp. 0.7]);
+z = Synth.new(\bufrd_noise, [\buf, ~b3.bufnum, \start, 0, \end, ~b3.numFrames-1, \freq, 0.9, \amp. 0.5]);
+
+// or add to group, to set all \freq simultaneously
+g = Group.new;
+w = Synth.new(\bufrd_noise, [\buf, ~b0.bufnum, \start, 0, \end, ~b0.numFrames-1, \freq, 3.7, \amp. 0.9], g);
+x = Synth.new(\bufrd_noise, [\buf, ~b1.bufnum, \start, 0, \end, ~b1.numFrames-1, \freq, 4.1, \amp. 0.8], g);
+y = Synth.new(\bufrd_noise, [\buf, ~b2.bufnum, \start, 0, \end, ~b2.numFrames-1, \freq, 5.3, \amp. 0.7], g);
+z = Synth.new(\bufrd_noise, [\buf, ~b3.bufnum, \start, 0, \end, ~b3.numFrames-1, \freq, 3.9, \amp. 0.5], g);
+
+g.set(\freq, 200);
+
+// Experiment with RecordBuf and BufWr (write)
 
 
