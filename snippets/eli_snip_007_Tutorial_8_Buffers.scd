@@ -89,3 +89,28 @@ s.sampleRate;
 
 ~b1_part0.play;
 ~b1_part0.numFrames;
+
+// reading a set number of frames, starting with offset and loading to the end.
+~b1_part1 = Buffer.read(
+	s,
+	"/full/path/to/sound.extention",
+	222000,
+	numFrames: ~b0.numFrames - (222000+1)); // avoids off by one, explicitely.
+
+
+/*
+        2.2 Loading many sound files at once
+
+        - lots of ways to do this, most involve iteration
+        - store buffer in array
+
+*/
+
+~bells = Array.new;
+
+// hold a reference to a folder
+~folder = PathName.new("/full/path/to/");
+
+// return a list of filenames of sounds in that folder
+~folder.entries;
+
