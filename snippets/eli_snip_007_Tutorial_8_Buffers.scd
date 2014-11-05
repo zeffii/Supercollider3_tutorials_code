@@ -242,4 +242,26 @@ SynthDef.new(\playbuf_test, {
 Synth.new(\playbuf_test, [\buf, ~bells[0].bufnum, \rate, 2]);
 Synth.new(\playbuf_test, [\buf, ~bells[1].bufnum, \rate, 1.2]);
 
+// this synth will start half second into the sample and won't free itself at the end
 
+(
+SynthDef.new(\playbuf_test, {
+	arg amp=1, out=0, buf, rate=1, t_trig=1, start=0, da=2;
+	var sig;
+	sig = PlayBuf.ar(
+		2,
+		buf,
+		BufRateScale.kr(buf) * rate,
+		t_trig,
+		start,
+		doneAction:da);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+// note how s.meter is frozen on the last output sample
+x = Synth.new(\playbuf_test, [\buf, ~bells[2].bufnum, \start, s.sampleRate/2, \da, 0]);
+
+// jump to start position like
+x.set(\t_trig, 1);
