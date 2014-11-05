@@ -150,5 +150,56 @@ s.options.numBuffers = 2000;   // requires a reboot of the server.
 /*
         3. Manipulation Buffers with Ugens.
 
+        two ugens
+        - PlayBuf: will read automatically through a buffer at a given playback rate
+        - BufRd  : doesn't have a rate argument. relies on an audio rate pointer into the buffer
+                   for sample playback
+
 */
+
+// PlayBuf,  needs to know at minimum 1) channels and 2) Buffer number
+// ||||||| num channels in the playbuf can not be modulated ||||||||| but you can switch out
+// which buffer you want to play.
+(
+SynthDef.new(\playbuf_test, {
+	arg amp=1, out=0, buf;  // making buf allows the SynthDef to play different samples.
+	var sig;
+	sig = PlayBuf.ar(2, buf);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+// i'm loading from array, but it could be a `~b0` too
+Synth.new(\playbuf_test, [\buf, ~bells[0].bufnum]);
+Synth.new(\playbuf_test, [\buf, ~bells[1].bufnum]);
+
+// the default behaviour is doneAction:0  sit on the last frame of the sample when done playing,
+// this doesn't let the synth free itself after playing, we might want to specify a specific doneAction
+// notice in the above example that the last output sample is what is shows in the s.meter, like frozen.
+
+// fresh start, might do a s.reboot first..
+s.reboot;
+~bells = Array.new;
+~rawfolder = "C:/Users/dealga/Desktop/code/supercollider/sounds"
+~folder = PathName.new(~rawfolder);
+(
+~folder.entries.do{
+	arg path;
+	~bells = ~bells.add(Buffer.read(s, path.fullPath));  //this concatenates ~folder + path
+}
+)
+
+(
+SynthDef.new(\playbuf_test, {
+	arg amp=1, out=0, buf, da=2;  // da = done action, will default to 2 now. and let go of the buffer
+	var sig;
+	sig = PlayBuf.ar(2, buf, doneAction:da);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+Synth.new(\playbuf_test, [\buf, ~bells[0].bufnum]);
+Synth.new(\playbuf_test, [\buf, ~bells[1].bufnum]);
 
