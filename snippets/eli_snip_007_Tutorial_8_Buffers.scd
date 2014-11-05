@@ -34,6 +34,7 @@ s.boot;
 // to free all Buffers, use the classmethod.
 Buffer.freeAll;
 
+////////////////////////////////////////////////////////////////////////////////////////
 
 /*
         2. Fundamental attributes of Buffers
@@ -98,6 +99,8 @@ s.sampleRate;
 	numFrames: ~b0.numFrames - (222000+1)); // avoids off by one, explicitely.
 
 
+////////////////////////////////////////////////////////////////////////////////////////
+
 /*
         2.2 Loading many sound files at once
 
@@ -146,6 +149,7 @@ s.options.numBuffers;   // 1024
 // to change
 s.options.numBuffers = 2000;   // requires a reboot of the server.
 
+////////////////////////////////////////////////////////////////////////////////////////
 
 /*
         3. Manipulation Buffers with Ugens.
@@ -265,3 +269,192 @@ x = Synth.new(\playbuf_test, [\buf, ~bells[2].bufnum, \start, s.sampleRate/2, \d
 
 // jump to start position like
 x.set(\t_trig, 1);
+
+////
+///  looop!  will play through the buffer and ignore the doneAction.
+////
+
+// make sure all buffs you are about to reference are loaded
+
+(
+SynthDef.new(\playbuf_test, {
+	arg amp=1, out=0, buf, rate=1, t_trig=1, start=0, loop=0, da=2;
+	var sig;
+	sig = PlayBuf.ar(
+		2,
+		buf,
+		BufRateScale.kr(buf) * rate,
+		t_trig,
+		start,
+		loop,
+		doneAction:da);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+// note how s.meter is frozen on the last output sample
+x = Synth.new(\playbuf_test, [\buf, ~bells[2].bufnum, \loop, 1]);
+
+// jump to start position like
+x.set(\t_trig, 1);
+x.free;
+
+// playing backward... negative rate, \start at the end
+(
+x = Synth.new(\playbuf_test, [
+	\buf, ~bells[2].bufnum,
+	\rate, -1,
+	\start, ~bells[2].numFrames -2   // else doneAction is called. if -1
+]);
+)
+x.free;
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+       4 Rate, declared as semitones instead of ratio.
+
+       - using a Ugen again to calculate ratio in just intonation relative to the buffer sample rate.
+
+       12.midiratio //   = 1.9999999999
+       5.midiratio //  1.33
+
+*/
+(
+x = Synth.new(\playbuf_test, [
+	\buf, ~bells[2].bufnum,
+	\rate, 12.midiratio,  // or could code the SynthDef to take 12 directly so we don't have
+	                      // to specify the extra .midiratio every time.
+]);
+)
+
+// elaborate example
+
+~bells = Array.new;
+~rawfolder = "C:/Users/dealga/Desktop/code/supercollider/sounds3";   // actual bells
+~folder = PathName.new(~rawfolder);
+(
+~folder.entries.do{
+	arg path;
+	~bells = ~bells.add(Buffer.read(s, path.fullPath));  //this concatenates ~folder + path
+}
+)
+
+(
+SynthDef.new(\playbuf_test, {
+	arg amp=1, out=0, buf, rate=1, t_trig=1, start=0, loop=0, da=2;
+	var sig;
+	sig = PlayBuf.ar(
+		2,
+		buf,
+		BufRateScale.kr(buf) * rate,
+		t_trig,
+		start,
+		loop,
+		doneAction:da);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+s.plotTree;
+g = Group.new;
+
+(
+// 3 synths with different buffers and different playback rates
+// target --> g
+x = Synth.new(\playbuf_test, [\buf, ~bells[0].bufnum, \rate, 1.5, \loop, 1, \amp, 0.5], g);
+y = Synth.new(\playbuf_test, [\buf, ~bells[1].bufnum, \rate, 1.9, \loop, 1, \amp, 0.5], g);
+z = Synth.new(\playbuf_test, [\buf, ~bells[2].bufnum, \rate, 1.23, \loop, 1, \amp, 0.5], g);
+
+)
+
+// one can change the \rate of all synths in the group
+g.set(\rate, 0.6);
+// could also set all three synths to play the same buffer
+g.set(\buf, ~bells[2].bufnum);
+
+// or send individual rates, picked from exprand
+g.set(\rate, exprand(0.2, 2.0));
+
+// the individual nodes can still be accessed using x,y and z
+z.set(\rate, 0.2);
+
+// lastly turn off looping for all three synths
+g.set(\loop, 0);
+
+g.free; // if you need
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+         5 BufRd
+
+         - starts with the same two arguments as PlayBuf (numChannels, bufNum)
+         - 3rd argument must be an audio rate signal `.ar`
+
+*/
+
+// just load one sound
+~fullpath = "C:/Users/dealga/Desktop/code/supercollider/sounds/snap_miller.wav"; // pd
+~b5 = Buffer.read(s, ~fullpath);
+
+(
+SynthDef.new(\bufrd_test, {
+	arg amp=1, out=0, buf;
+	var sig, ptr;
+	ptr = Line.ar(
+		0,
+		BufFrames.kr(buf)-1,
+		BufDur.kr(buf),
+		doneAction:2);
+	sig = BufRd.ar(2, buf, ptr);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+Synth.new(\bufrd_test, [\buf, ~b5.bufnum]);
+
+// but maybe we want some flexibility where line starts and ends!
+// so..declare some arguments!
+
+~fullpath = "C:/Users/dealga/Desktop/code/supercollider/sounds/snap_miller.wav"; // pd
+~b5 = Buffer.read(s, ~fullpath);
+
+(
+SynthDef.new(\bufrd_test, {
+	arg amp=1, out=0, buf, start, end;
+	var sig, ptr;
+	ptr = Line.ar(
+		start,
+		end,
+		BufDur.kr(buf),
+		doneAction:2);
+	sig = BufRd.ar(2, buf, ptr);
+	sig = sig * amp;
+	Out.ar(out, sig);
+}).add;
+)
+
+// now can play forward (select all 5 lines and execute)
+Synth.new(\bufrd_test, [
+	\buf, ~b5.bufnum,
+	\start, 0,
+	\end, ~b5.numFrames-1
+]);
+
+// or backward
+Synth.new(\bufrd_test, [
+	\buf, ~b5.bufnum,
+	\start, ~b5.numFrames-1,
+	\end, 0
+]);
+
+
+
+
