@@ -129,6 +129,26 @@ s.sampleRate;
 )
 
 // I have 3 sounds in this directory, so prove that the above code loaded them into the Array.
+~bells;  // will show the array in the postwindow
+
+~bells.at(0).play;
+~bells.at(1).play;
+~bells.at(2).play;
+
+// this also works, square bracket.
 ~bells[0].play;
 ~bells[1].play;
 ~bells[2].play;
+
+// the limit to the number of buffers you can load onto the server is found by
+s.options.numBuffers;   // 1024
+
+// to change
+s.options.numBuffers = 2000;   // requires a reboot of the server.
+
+
+/*
+        3. Manipulation Buffers with Ugens.
+
+*/
+
