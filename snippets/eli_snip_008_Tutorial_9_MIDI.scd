@@ -95,9 +95,192 @@ MIDIdef.noteOn(\noteOnTest, {
 });
 )
 
-// let's trigger a Ugen from inside the MIDIdef to get our first sounds
+// let's trigger a SinOsc Ugen from inside the MIDIdef to get our first sounds
+
+(
+MIDIdef.noteOn(\noteOnTest, {
+	arg vel, nn, chan, src;
+	[vel, nn].postln;      // optional for showing, handy for debug
+	{
+		var sig, env;
+		sig = SinOsc.ar(nn.midicps)!2;                    // two channel SinOsc with freq nn converted
+		env = EnvGen.kr(Env.perc, doneAction:2);          // let go once done
+		sig = sig * env * vel.linexp(1, 127, 0.01, 0.3);  // vel remapped to sane signal values
+	}.play;
+});
+)
+
+// how about a Triangle wave
+(
+MIDIdef.noteOn(\noteOnTest, {
+	arg vel, nn, chan, src;
+	[vel, nn].postln;
+	{
+		var sig, env;
+		sig = LFTri.ar(nn.midicps)!2;
+		env = EnvGen.kr(Env.perc, doneAction:2);
+		sig = sig * env * vel.linexp(1, 127, 0.01, 0.3);
+	}.play;
+});
+)
 
 
+/*
+       2. Create a Synthdef and trigger that via MIDI
+
+*/
+
+// simplify the MIDIdef function. now instantiate a synth with the correct params
+(
+MIDIdef.noteOn(\noteOnTest, {
+	arg vel, nn, chan, src;
+	[vel, nn].postln;
+	Synth.new(\tone, [\freq, nn.midicps, \amp, vel.linexp(1, 127, 0.01, 0.3)
+	]);
+});
+)
+
+(
+SynthDef.new(\tone, {
+	arg freq=440, amp=0.3;
+	var sig, env;
+	sig = LFTri.ar(freq)!2;
+	env = EnvGen.kr(Env.perc, doneAction:2);
+	sig = sig * env * amp;
+	Out.ar(0, sig);
+}).add;
+)
+
+// to test \tone a simple .new
+x = Synth.new(\tone, [\freq, 500, \amp, 0.3]);
 
 
+/*
+       2.1 Do away with perc env and use adsr.
+       - to sustain with a note on
+       - and release with a note off
+       using adsr's gate arg. when get==1 sustain, when gate==0, goes into release .
+
+*/
+
+(
+SynthDef.new(\tone, {
+	arg freq=440, amp=0.3, gate=0;
+	var sig, env;
+	sig = LFTri.ar(freq)!2;
+	env = EnvGen.kr(Env.adsr, gate, doneAction:2);
+	sig = sig * env * amp;
+	Out.ar(0, sig);
+}).add;
+)
+
+// quick test to see if gate works, it should.
+x = Synth.new(\tone, [\gate, 1]);
+x.set(\gate, 0);
+
+/*
+      2.2 MIDI Polyphony << elaboration and continuation >>
+
+      we set up an array of 128 to hold each possible note,
+      because inside the MIDIdef.noteOn we can't usefully do:
+
+      x = Synth.new( )
+      x.set(\gate, 0)
+
+      if you make a new synth you have no way of communicating
+      with the old one, and no way of releasing the note. Meaning
+      we get a hole bunch of stuck notes.
+
+      > create an empty array of size 128, one for each possible note number (nn)
+      > when I play a note I create a synth, store that synth in the array, at an
+      > index equal to the incoming note number. When I release a note, I free the
+      > synth at the index equal to the incoming nn.
+
+      This visualizes the keyboard as an array of possible notes.
+*/
+
+~notes = Array.newClear(128); // init the array
+
+// modify the mididef for .noteOn messages
+// and store the created synth in the array of notes.
+
+// This also requires a second MIDIdef to handle the noteOff (see below)
+// else all notes get stuff because gate never gets set to 0.
+(
+MIDIdef.noteOn(\noteOnTest, {
+	arg vel, nn, chan, src;
+	["note on", vel, nn].postln;
+	~notes[nn] = Synth.new(\tone, [
+		\freq, nn.midicps,
+		\amp, vel.linexp(1, 127, 0.01, 0.3),
+		\gate, 1,
+	]);
+});
+)
+
+// set the gate to 0 on .noteOff and replace the synth in the array with nil.
+(
+MIDIdef.noteOff(\noteOffTest, {
+	arg vel, nn;
+	["note off", vel, nn].postln;
+	~notes[nn].set(\gate, 0);
+	~notes[nn] = nil;
+});
+)
+
+// sound generator
+(
+SynthDef.new(\tone, {
+	arg freq=440, amp=0.3, gate=0;
+	var sig, env;
+	sig = LFTri.ar(freq)!2;
+	env = EnvGen.kr(Env.adsr, gate, doneAction:2);
+	sig = sig * env * amp;
+	Out.ar(0, sig);
+}).add;
+)
+
+
+/*
+       3. Finishing touch: Pitchbend!
+       - pitch bend on all current notes
+       - pitch bend to be a global state, so current pitch position is used by new notes.
+
+*/
+
+
+~notes = Array.newClear(128);
+
+(
+MIDIdef.noteOn(\noteOnTest, {
+	arg vel, nn, chan, src;
+	["note on", vel, nn].postln;
+	~notes[nn] = Synth.new(\tone, [
+		\freq, nn.midicps,
+		\amp, vel.linexp(1, 127, 0.01, 0.3),
+		\gate, 1,
+	]);
+});
+)
+
+(
+MIDIdef.noteOff(\noteOffTest, {
+	arg vel, nn;
+	["note off", vel, nn].postln;
+	~notes[nn].set(\gate, 0);
+	~notes[nn] = nil;
+});
+)
+
+// sound generator
+(
+SynthDef.new(\tone, {
+	arg freq=440, amp=0.3, gate=0;
+	var sig, env;
+	sig = LFTri.ar(freq)!2;
+	env = EnvGen.kr(Env.adsr, gate, doneAction:2);
+	sig = sig * env * amp;
+	Out.ar(0, sig);
+}).add;
+)
 
