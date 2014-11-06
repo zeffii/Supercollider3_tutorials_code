@@ -246,10 +246,29 @@ SynthDef.new(\tone, {
        - pitch bend on all current notes
        - pitch bend to be a global state, so current pitch position is used by new notes.
 
+       we need a third MIDIdef
+
 */
 
 
 ~notes = Array.newClear(128);
+
+// keep track of the pitchwheel position
+// MIDIdef will update this value every time the pitchwheel is moved
+~bend = 8192;
+
+// at rest 8192, full 16383, bottom 0.
+// In the video Eli's Yamaha sends pitch bend message on three channels,
+// if that happens to you filter the channels by adding `chan: 0` to the MIDIdef, seen below.
+(
+MIDIdef.bend(\bendTest, {
+	arg val, chan, src;
+	['bend', val, chan, src].postln;  // [ bend, 11888, 0, 1 ]
+	~bend = val;
+	// also update any notes currently in ~notes
+	~notes.do{arg synth; synth.set(\bend, val.linlin(0, 16383, -2, 2))};
+}, chan: 0);
+)
 
 (
 MIDIdef.noteOn(\noteOnTest, {
@@ -259,6 +278,8 @@ MIDIdef.noteOn(\noteOnTest, {
 		\freq, nn.midicps,
 		\amp, vel.linexp(1, 127, 0.01, 0.3),
 		\gate, 1,
+		// new notew, check current bent position first, remap.
+		\bend, ~bend.linlin(0, 16383, -2, 2),
 	]);
 });
 )
@@ -272,12 +293,12 @@ MIDIdef.noteOff(\noteOffTest, {
 });
 )
 
-// sound generator
+// sound generator, adjust for bend
 (
 SynthDef.new(\tone, {
-	arg freq=440, amp=0.3, gate=0;
+	arg freq=440, amp=0.3, gate=0, bend=0;
 	var sig, env;
-	sig = LFTri.ar(freq)!2;
+	sig = LFTri.ar(freq * bend.midiratio)!2;
 	env = EnvGen.kr(Env.adsr, gate, doneAction:2);
 	sig = sig * env * amp;
 	Out.ar(0, sig);
