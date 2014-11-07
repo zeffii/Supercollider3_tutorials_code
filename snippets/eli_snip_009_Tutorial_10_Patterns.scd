@@ -309,7 +309,7 @@ Pdef(
 		\harmonic, Pexprand(1, 80, inf).round,  //or cut out the higher partials 80->40 and re-eval
 		\atk, Pwhite(2.0, 3.0, inf),            // change these from long to short
 		\rel, Pwhite(5.0, 10.0, inf),           // change these from long to short
-	    \amp, Pkey(\harmonic).reciprocal * 0.3,
+		\amp, Pkey(\harmonic).reciprocal * 0.3,
 		\pan, Pwhite(-0.8, 0.8, inf)    // staying away from extreme side
 	);
 ).play;  // .stop;
