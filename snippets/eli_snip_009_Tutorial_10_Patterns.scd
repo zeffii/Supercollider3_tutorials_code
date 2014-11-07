@@ -375,6 +375,8 @@ Pdef(
 ).play; // .stop;
 )
 
+Pdef(\rhythm).stop;   // or stop like this.
+
 // If we only  want certain buffers we modify the buf pattern an re-evaluate
 
 (
