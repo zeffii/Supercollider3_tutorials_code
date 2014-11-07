@@ -406,7 +406,7 @@ m = Pdef(        // assigning to global var m so i can hit stop easily.
 	Pbind(
 		\instrument, \bufplay,
 		\dur, Pseq([1/16], inf),
-		\buf, Prand(d[\l]++d[\m]++d[\h], inf),
+		\buf, Prand(d[\l]++d[\m]++d[\h], inf),  //  or Pxrand (never pick the same value in a row)
 		// stretch the raw delta times
 		\stretch, 1.875, // 60 / 128 * 4
 		\rate, 1,
@@ -416,6 +416,50 @@ m = Pdef(        // assigning to global var m so i can hit stop easily.
 )
 
 m.stop;
+
+// Pwrand is a bit more interesting, it makes selection based on a second array of weights
+// Pwrand in this example will pick \l 80% of the time, \w 15% and \h 5%.
+
+(
+m = Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\buf, Pwrand([d[\l][0], d[\m][0], d[\h][0]], [0.8, 0.15, 0.05], inf),
+		\rate, 1,
+		\amp, 0.5,
+	);
+).play;
+)
+
+m.stop;
+
+// the send array in Pwrand must sum to 1, and there is a neat method to do that for us
+// [8, 2, 1].normalizeSum
+// >  [ 0.72727272727273, 0.18181818181818, 0.090909090909091 ]
+(
+m = Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\buf, Pwrand([d[\l][0], d[\m][0], d[\h][0]], [8, 2, 1].normalizeSum, inf),
+		\rate, 1,
+		\amp, 0.5,
+	);
+).play;
+)
+
+m.stop;
+
+// Also check Pshuf, it takes an array and will pick items from it in a pattern.
+// the pattern repeats when all items have been selected once.
+
+
+
 
 
 
