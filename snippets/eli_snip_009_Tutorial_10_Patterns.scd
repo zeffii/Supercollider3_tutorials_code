@@ -161,4 +161,165 @@ p.stop;
 /*
         3. Random Number patterns
 
+        - lookup Pexprand
 */
+
+
+(
+SynthDef.new(\sine, {
+	arg freq=440, atk=0.005, rel=0.3, amp=1, pan=0;
+	var sig, env;
+	sig = SinOsc.ar(freq);
+	env = EnvGen.kr(Env.new([0,1,0], [atk, rel], [1, -1]), doneAction:2);
+	sig = Pan2.ar(sig, pan, amp);
+	sig = sig * env;
+	Out.ar(0, sig);
+}).add;
+)
+
+
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pseq([0.6, 0.15, 0.15], inf),
+	\freq, Pexprand(50, 400, inf),    //exponential distribution
+).play;
+)
+
+p.stop;
+
+
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pwhite(0.05, 0.5).trace,  //linear distribution
+	\freq, Pexprand(50, 400, inf),
+).play;
+)
+
+p.stop;
+
+
+/*
+       4 patterns for controlling a d s r etc.
+
+       for the example many notes at once means it's a good idea to lower the overall amp
+*/
+
+(
+SynthDef.new(\sine, {
+	arg freq=440, atk=0.005, rel=0.3, amp=1, pan=0;
+	var sig, env;
+	sig = SinOsc.ar(freq);
+	env = EnvGen.kr(Env.new([0,1,0], [atk, rel], [1, -1]), doneAction:2);
+	sig = Pan2.ar(sig, pan, amp);
+	sig = sig * env;
+	Out.ar(0, sig);
+}).add;
+)
+
+
+// might be a little loud... turn down first.
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pwhite(0.05, 0.5, inf),
+	\freq, Pexprand(50, 4000, inf).trace,
+	\atk, Pwhite(2.0, 3.0, inf),
+	\rel, Pwhite(5.0, 10.0, inf),
+	\amp, Pexprand(0.01, 0.2, inf),
+	\pan, Pwhite(-0.8, 0.8, inf)    // staying away from extreme side
+).play;
+)
+
+s.plotTree;  // to see the event stream generating a whole bunch of nodes.
+p.stop;
+
+// > suppose we want the sinewaves to allign with the harmonic series,
+// > patterns understand mathematical operations and methods, so we can
+// > use the .round method on the frequency pattern
+
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pwhite(0.05, 0.5, inf),
+	\freq, Pexprand(50, 4000, inf).round(55).trace,
+	\atk, Pwhite(2.0, 3.0, inf),
+	\rel, Pwhite(5.0, 10.0, inf),
+	\amp, Pexprand(0.01, 0.2, inf),
+	\pan, Pwhite(-0.8, 0.8, inf)
+).play;
+)
+p.stop;
+
+// The same effect can be got using \midinote and \hardmonic directly
+
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pwhite(0.05, 0.5, inf),
+	\midinote, 33,
+	\harmonic, Pexprand(1, 80, inf).round.trace,
+	\atk, Pwhite(2.0, 3.0, inf),
+	\rel, Pwhite(5.0, 10.0, inf),
+	\amp, Pexprand(0.01, 0.2, inf),
+	\pan, Pwhite(-0.8, 0.8, inf)
+).play;
+)
+p.stop;
+
+
+// the higher partials become dominant, that can be mitigated by making the amp of a \sine
+// a function of its pitch. To do this we must have the amplitude pattern rely on the values
+// of the pitch pattern. We use the pattern PKey to copy values from an earlier pattern. in
+// this case harmonic
+
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pwhite(0.05, 0.5, inf),
+	\midinote, 33,
+	\harmonic, Pexprand(1, 80, inf).round.trace,
+	\atk, Pwhite(2.0, 3.0, inf),
+	\rel, Pwhite(5.0, 10.0, inf),
+	\amp, Pkey(\harmonic).reciprocal * 0.3,
+	\pan, Pwhite(-0.8, 0.8, inf)    // staying away from extreme side
+).play;
+)
+p.stop;
+
+
+/*
+
+        5. Manipulation patterns while they play.
+        wrap a Pbind in a Pdef. Symtax os similar to MIDIdef
+
+*/
+
+// inside the Pdef theres no longer need for the global variables
+// once playing we can simply change the commands and reevaluate.
+// the changes will take effect without interupting the event stream
+(
+Pdef(
+	\sinepat,
+	Pbind(
+		\instrument, \sine,
+		\dur, Pwhite(0.05, 0.5, inf),
+		\midinote, Pseq([33], inf),        // try changing the fundamental and re-eval
+		\harmonic, Pexprand(1, 80, inf).round,  //or cut out the higher partials 80->40 and re-eval
+		\atk, Pwhite(2.0, 3.0, inf),            // change these from long to short
+		\rel, Pwhite(5.0, 10.0, inf),           // change these from long to short
+	    \amp, Pkey(\harmonic).reciprocal * 0.3,
+		\pan, Pwhite(-0.8, 0.8, inf)    // staying away from extreme side
+	);
+).play;  // .stop;
+)
+
+
+/*
+     6. Rhythm!  switching to SndBuf as a sound source.
+
+*/
+
+
+
