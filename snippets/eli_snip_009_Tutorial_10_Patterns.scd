@@ -318,8 +318,124 @@ Pdef(
 
 /*
      6. Rhythm!  switching to SndBuf as a sound source.
+     get a sample pack of low mid and high percussive sounds.
 
+     "C:/Users/dealga/Desktop/shots"    has three subfolders Low, Mid, High
 */
 
+// using a Dictionary to store the sounds
+// each key will point to an array of the appropriate sound files
+(
+d = Dictionary.new;
+d.add(\l -> PathName("C:/Users/dealga/Desktop/shots/Low").entries.collect({
+	arg sf;
+	Buffer.read(s, sf.fullPath);
+	});
+);
+
+d.add(\m -> PathName("C:/Users/dealga/Desktop/shots/Mid").entries.collect({
+	arg sf;
+	Buffer.read(s, sf.fullPath);
+	});
+);
+
+d.add(\h -> PathName("C:/Users/dealga/Desktop/shots/High").entries.collect({
+	arg sf;
+	Buffer.read(s, sf.fullPath);
+	});
+);
+)
+
+d[\l].choose.play;  // trigger this a few times to get random low hits
+// 17 minutes.
+(
 
 
+// a simple Synth def then to play buffer objects
+SynthDef.new(\bufplay, {
+	arg buf=0, rate=1, amp=1;
+	var sig;
+	sig = PlayBuf.ar(2, buf, BufRateScale.ir(buf) * rate, doneAction:2);
+	sig = sig * amp;
+	Out.ar(0, sig);
+}).add;
+)
+
+// make a new Pbind and Pdef
+(
+Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([0.12], inf),
+		\buf, Prand(d[\l]++d[\m]++d[\h], inf),
+		\rate, 1,
+		\amp, 0.5,
+	);
+).play; // .stop;
+)
+
+// If we only  want certain buffers we modify the buf pattern an re-evaluate
+
+(
+Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([0.12], inf),
+		\buf, Prand(d[\m], inf),    // or d[\l]    or  d[\h]    re-eval while playing
+		\rate, 1,
+		\amp, 0.5,
+	);
+).play; // .stop;
+)
+
+
+/*
+        BPM ! often it's preferable to think with respect to rhuthm in terms of beats per minute
+        rather than some floating point ratio per second
+
+        let's say we want the sounds to roll in as 16 notes at 128 bpm, in time signature 4/4
+*/
+
+// first thing to change is the \dur key to be literally 1/16 of our hypothetical 4/4 measure
+// see the Pbind helpfile for \stretch
+(
+m = Pdef(        // assigning to global var m so i can hit stop easily.
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\buf, Prand(d[\l]++d[\m]++d[\h], inf),
+		// stretch the raw delta times
+		\stretch, 1.875, // 60 / 128 * 4
+		\rate, 1,
+		\amp, 0.5,
+	);
+).play;
+)
+
+m.stop;
+
+
+
+
+
+
+
+
+
+
+
+
+// this just copied from above so later we can mix a sine with percussion.
+// you have already seen how this is constructed, skip to the next SynthDef
+// SynthDef.new(\sine, {
+// 	arg freq=440, atk=0.005, rel=0.3, amp=1, pan=0;
+// 	var sig, env;
+// 	sig = SinOsc.ar(freq);
+// 	env = EnvGen.kr(Env.new([0,1,0], [atk, rel], [1, -1]), doneAction:2);
+// 	sig = Pan2.ar(sig, pan, amp);
+// 	sig = sig * env;
+// 	Out.ar(0, sig);
+// }).add;
