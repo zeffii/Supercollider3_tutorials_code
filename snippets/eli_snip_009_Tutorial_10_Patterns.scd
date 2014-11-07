@@ -458,28 +458,219 @@ m.stop;
 // Also check Pshuf, it takes an array and will pick items from it in a pattern.
 // the pattern repeats when all items have been selected once.
 
+/*
+
+     let's constrain the patterns using accents
 
 
+*/
+
+// tedious way
+(
+m = Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\buf, Prand(d[\l]++d[\m]++d[\h], inf),
+		\rate, 1,
+		// accents on beat 1 and 3
+		\amp, Pseq([0.8, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], inf),
+	);
+).play;
+)
+
+m.stop;
 
 
+// duplication and concatenation is a litle bit faster and cleaner
+(
+m = Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\buf, Prand(d[\l]++d[\m]++d[\h], inf),
+		\rate, 1,
+		// accents on beat 1 and 3
+		\amp, Pseq([0.8]++(0.1!7), inf),
+	);
+).play;
+)
+
+m.stop;
+
+// but we're ignoring an important feature of patterns, the fact they can be nested
+
+(
+m = Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\buf, Prand(d[\h]++d[\m]++d[\l], inf),
+		\rate, 1,
+		// accents on beat 1 and 3, but this time using a nested Pexprand!
+		\amp, Pseq([0.8, Pexprand(0.005, 0.2, 7)], inf),
+	);
+).play;
+)
+
+m.stop;
 
 
+// seen as we;ve bothered to split the sounds, let's make it so we always get a low sound on beat 1
+// and always a high sound on beat 3
 
+// will change buf pattern, and this demonstrates nested patterns
+(
+m = Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\buf, Pseq(
+		    [
+				Prand(d[\l], 1),                 // first beat always low
+				Prand(d[\h]++d[\m]++d[\l], 7),   // any
+				Prand(d[\h], 1),                 // 3rd beat always high
+				Prand(d[\h]++d[\m]++d[\l], 7),   // any
+		    ], inf                               // repeat indefinitely
+		),
+		\rate, 1,
+		// accents on beat 1 and 3, but this time using a nested Pexprand!
+		\amp, Pseq([0.8, Pexprand(0.005, 0.2, 7)], inf),
+	);
+).play;
+)
 
+m.stop;
 
+// to make things a bit less predictable you might randomize the playback rate a little
+// this is not shuffle / swing
+(
+m = Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\buf, Pseq(
+		    [
+				Prand(d[\l], 1),                 // first beat always low
+				Prand(d[\h]++d[\m]++d[\l], 7),   // any
+				Prand(d[\h], 1),                 // 3rd beat always high
+				Prand(d[\h]++d[\m]++d[\l], 7),   // any
+		    ], inf                               // repeat indefinitely
+		),
+		\rate, Pexprand(0.8, 1.25, inf),
+		// accents on beat 1 and 3, but this time using a nested Pexprand!
+		\amp, Pseq([0.8, Pexprand(0.005, 0.2, 7)], inf),
+	);
+).play;
+)
 
+m.stop;
 
+// if you notice that the stream has a hickup when you re-evaluate the Pdef, it's because we haven't
+// placed it in a grid yet. there is no quantization so far.
+// > quantization is the process of locking a patterns onset time to a fixed rhythmic grid
 
+// we can make it so changes won't take effect until the start of the next bar.
+// any evaluated changes in for example \rate won't be pushed until the next bar
+(
+m = Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\buf, Pseq(
+		    [
+				Prand(d[\l], 1),                 // first beat always low
+				Prand(d[\h]++d[\m]++d[\l], 7),   // any
+				Prand(d[\h], 1),                 // 3rd beat always high
+				Prand(d[\h]++d[\m]++d[\l], 7),   // any
+		    ], inf                               // repeat indefinitely
+		),
+		\rate, Pexprand(0.8, 1.25, inf),
+		// accents on beat 1 and 3, but this time using a nested Pexprand!
+		\amp, Pseq([0.8, Pexprand(0.005, 0.2, 7)], inf),
+	);
+).play(quant: 1.875);
+// while playing replace the abovev line with with
+// ).quant_(1.875);
+)
 
+m.stop;
+
+/// This means you can quantize multiple patterns to the same grid!
+
+/*
+
+     6 demo of sine + buffer
+
+*/
 
 // this just copied from above so later we can mix a sine with percussion.
 // you have already seen how this is constructed, skip to the next SynthDef
-// SynthDef.new(\sine, {
-// 	arg freq=440, atk=0.005, rel=0.3, amp=1, pan=0;
-// 	var sig, env;
-// 	sig = SinOsc.ar(freq);
-// 	env = EnvGen.kr(Env.new([0,1,0], [atk, rel], [1, -1]), doneAction:2);
-// 	sig = Pan2.ar(sig, pan, amp);
-// 	sig = sig * env;
-// 	Out.ar(0, sig);
-// }).add;
+SynthDef.new(\sine, {
+	arg freq=440, atk=0.005, rel=0.3, amp=1, pan=0;
+	var sig, env;
+	sig = SinOsc.ar(freq);
+	env = EnvGen.kr(Env.new([0,1,0], [atk, rel], [1, -1]), doneAction:2);
+	sig = Pan2.ar(sig, pan, amp);
+	sig = sig * env;
+	Out.ar(0, sig);
+}).add;
+
+
+(
+Pdef(
+	\sinepat,
+	Pbind(
+		\instrument, \sine,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\note, Pxrand([0,3,5,8,10,12], inf),
+		\atk, 0.005,
+		// \gtranspose, -9,   // try this while playing.
+		\rel, Pexprand(0.01, 0.5, inf),
+		\amp, Pexprand(0.05, 0.5, inf),
+		\pan, Pwhite(-0.8, 0.8, inf)
+	);
+//).quant_(1.875);     // evaluate with this to edit while playing
+).play(quant: 1.875);  // minus this
+)
+
+(
+Pdef(
+	\rhythm,
+	Pbind(
+		\instrument, \bufplay,
+		\dur, Pseq([1/16], inf),
+		\stretch, 1.875,
+		\buf, Pseq(
+		    [
+				Prand(d[\l], 1),                 // first beat always low
+				Prand(d[\h]++d[\m]++d[\l], 7),   // any
+				Prand(d[\h], 1),                 // 3rd beat always high
+				Prand(d[\h]++d[\m]++d[\l], 7),   // any
+		    ], inf                               // repeat indefinitely
+		),
+		\rate, Pexprand(0.8, 1.25, inf),
+		// accents on beat 1 and 3, but this time using a nested Pexprand!
+		\amp, Pseq([0.8, Pexprand(0.005, 0.2, 7)], inf),
+	);
+//).quant_(1.875);     // evaluate with this to edit while playing
+).play(quant: 1.875);  // minus this
+)
+
+// these Pdefs can be stopped so
+Pdef(\rhythm).stop;
+Pdef(\sinepat).stop;
+
