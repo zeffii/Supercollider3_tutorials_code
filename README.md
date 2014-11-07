@@ -7,3 +7,4 @@ These code snippets are reproduced with Eli's consent and I have done so primari
 
 Most code snippets evolve from simple to complex over the course of several minutes. I wanted to keep track of the various stages in-between, and record the occassional comment to reinforce what's going on.
 
+This is not intended to be a transcript of the videos, but some limited sections will have near verbatim reproduction of Eli's comments.
