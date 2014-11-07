@@ -138,3 +138,27 @@ p = Pbind(
 ).play;
 )
 
+// using \freq is probably not intuitive. there is a default \midinote key in Pbind
+// which converts to \freq automatically. ** if your SynthDef has a \freq key! , then it will work**
+// read the heirarchy of key notes in Pbind docs. Follow the naming conventions.
+
+// > It is to your advantage to use (in your SynthDefs) the arguments listed in the Pbind
+// > help file. such as \freq, \amp, \sustain etc..
+
+(
+p = Pbind(
+	\instrument, \sine,
+	\dur, Pseq([0.6, 0.15, 0.15], inf).trace,
+	\midinote, Pseq([60, 65, 67, 74], inf).trace,
+).play;
+)
+p.stop;
+
+// regarding the various tiers in the heirarchy, don't pick and mix between them, stay on one tier or
+// you will be providing redundant or nonsensical commands to you SynthDef / Pbind.
+
+
+/*
+        3. Random Number patterns
+
+*/
