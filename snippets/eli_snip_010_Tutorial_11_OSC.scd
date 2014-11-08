@@ -20,3 +20,37 @@
 
              Help docs: External Control / OSC / guide "OSC Communication"
 */
+
+// start with an OSCdef to respond to some device with a known path
+// See OSCdef man pages
+// by default SuperCollider listens for input on port 57120
+NetAddr.langPort;  // verify
+
+(
+OSCdef.new(
+	\toggle,               // named OSCdef, this is given by you
+	{
+		arg msg, time, addr, port;
+		[msg, time, addr, port].postln; // gives a swathe of information.
+	},
+	'/main/toggle1'        // or whatever OSC address you want to receive from.
+))
+
+// filtering the content of the message
+(
+OSCdef.new(
+	\toggle,
+	{
+		arg msg, time, addr, port;
+		// if the msg is an array then element 0 will give the origin-url '/main/toggle1'
+		// msg[1] will give the second element. etc.
+		// :: for toggle messages the value will usually be 0 or 1
+		// :: for sliders, it can be any range of numbers
+		// :: for enumeration, it can either be a named enum member or an index into a known collection.
+		// :: etc.
+		[msg[1]].postln;
+	},
+	'/main/toggle1'        // or whatever OSC address you want to receive from.
+))
+
+
