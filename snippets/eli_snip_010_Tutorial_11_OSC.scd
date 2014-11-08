@@ -16,7 +16,7 @@
 
              My (not Eli's) main interest in OSC is the formatting of the message and
              how SuperCollider can send/receive messages. Where the messages come
-             from is not so relevant, i'll concentrate of what the messages are.
+             from is not so relevant, i'll concentrate on what the messages are.
 
              Help docs: External Control / OSC / guide "OSC Communication"
 */
