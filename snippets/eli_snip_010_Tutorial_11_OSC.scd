@@ -37,7 +37,7 @@ OSCdef.new(
 	'/main/toggle1'        // or whatever OSC address you want to receive from.
 ))
 
-// filtering the content of the message
+// picking msg elements
 (
 OSCdef.new(
 	\toggle,
@@ -80,3 +80,82 @@ SynthDef.new(\tone, {
 x = Synth.new(\tone, [\gate, 1]);  // test it
 x.set(\freq, 120);                 // change other arg variables
 x.set(\gate, 0);                   // gate=0 to release
+
+
+/*
+        What about mulitple simultaneous osc events? (or seeminly simulaneous)
+        well, one way to work this is to make a whole bunch of OSCdefs
+
+*/
+
+// going with the TouchOSC example from the video, if you want to control multiple parameters
+// of the previous \tone SynthDef it might look like this
+
+(
+OSCdef.new(
+	\toggle,
+	{
+		arg msg, time, addr, port;
+		x.set(\gate, msg[1]);   // set to 0 or 1 when presses/depressed
+	},
+	'/main/toggle1'
+))
+
+(
+OSCdef.new(
+	\fader1,
+	{
+		arg msg, time, addr, port;
+		// this will need to be remapped to a range that \freq can use
+		// in the case of the video and TouchOSC this fader produces values between
+		// and including 0 .. 1 ,but that's useless for frequency so remap to 20..500.
+		x.set(\freq, msg[1].linexp(0, 1, 20, 500));
+	},
+	'/main/fader1'
+))
+
+(
+OSCdef.new(
+	\fader2,
+	{
+		arg msg, time, addr, port;
+		// nharm has useful input in the range 1..50 (or higher.. if you want)
+		x.set(\nharm, msg[1].linexp(0, 1, 1, 50));
+	},
+	'/main/fader2'
+))
+
+(
+OSCdef.new(
+	\fader3,
+	{
+		arg msg, time, addr, port;
+		// while amp does expect a range of 0..1.
+		// it is desirable sometimes to map this range exponentially instead of the
+		// linear range received from the slider outputs.
+		x.set(\amp, msg[1].linexp(0, 1, 0.001, 1));  // note the use of 0.001 to help the exponent.
+	},
+	'/main/fader3'
+))
+
+(
+OSCdef.new(
+	\rotary1,
+	{
+		arg msg, time, addr, port;
+		// pan goes from -1 to 1
+		x.set(\pan, msg[1].linexp(0, 1, -1, 1));
+	},
+	'/main/rotary1'
+))
+
+(
+OSCdef.new(
+	\rotary2,
+	{
+		arg msg, time, addr, port;
+		// detune could be anything, but pick something :) here max = 12 semitones
+		x.set(\detune, msg[1].linexp(0, 1, 0.001, 12));
+	},
+	'/main/rotary2'
+))
