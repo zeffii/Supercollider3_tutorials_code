@@ -1,3 +1,6 @@
+// The backslash notation in \pulseTest is equivalent to writing "pulseTest"
+// but it is one key stroke less, and you'll get used to it. You can write the 
+// string using quotes, and sometimes you will need. (OSC paths)
 (
 SynthDef.new(\pulseTest, {
 	arg ampHz=4, fund=40, maxPartial=4, width=0.5;
