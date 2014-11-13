@@ -52,14 +52,14 @@ s.freeAll;  // this is quite drastic because it will free all synths and groups 
 
 
 /*
-
     doneAction (see docs)
     this action allows us to free a synth depending on a given cue
 
+    below, when EnvGen is completed, doneAction: 2 will remove the synth from the server.
+    You'll see it appear on the plotTree and then vanish when it ends.
+
 */
 
-//  below, when EnvGen is completed, doneAction: 2 will remove the synth from the server.
-//  You'll see it appear on the plotTree and then vanish when it ends.
 (
 {
 	var sig, env;
@@ -68,9 +68,45 @@ s.freeAll;  // this is quite drastic because it will free all synths and groups 
 }.play
 )
 
+// here the shorted duration is 1 second, and this doesn't give freq XLine enough
+// time to complete the change from 880 to 110.
+// > Whichever XLine finishes first, will free the synth.
+
+(
+{
+	var sig, freq, env;
+	env = XLine.kr(1, 0.01, 1, doneAction:2);
+	freq = XLine.kr(880, 110, 5, doneAction:2);
+	sig = Pulse.ar(freq) * env;
+}.play;
+)
+
+// > reversing the roles, the env never has time to fade out to 0.01
+(
+{
+	var sig, freq, env;
+	env = XLine.kr(1, 0.01, 5, doneAction:2);
+	freq = XLine.kr(880, 110, 1, doneAction:2);
+	sig = Pulse.ar(freq) * env;
+}.play;
+)
+
+// the remedy is to change the doneAction on the shorter XLine to 0
+// which is the same as not supplying doneAction at all to that XLine
+// > since the default value of doneAction is 0.
+(
+{
+	var sig, freq, env;
+	env = XLine.kr(1, 0.01, 5, doneAction:2);
+	freq = XLine.kr(880, 110, 1, doneAction:0);
+	sig = Pulse.ar(freq) * env;
+}.play;
+)
+
+
 
 /*
-   Envelopes
+    Envelopes and Lines
 
 */
 
