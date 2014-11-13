@@ -1,3 +1,43 @@
+/*
+
+           SuperCollider Tutorial: 4. Envelopes and doneAction
+
+           https://www.youtube.com/watch?v=-wDAPo9hpCg
+
+*/
+
+s.boot;
+s.plotTree;   // you want to see which synths are present on the server
+
+// evaluate this line once, and you'll see a Synth on the plotTree;
+x = {PinkNoise.ar * 0.5}.play;    // plotTree might show: Synth("temp__0" : 1000)
+
+// because we just have one synth, we can stop the pinknoise by accessing the variable x
+x.free;
+
+// however, if you evaluate the pinknoise several times without first freeing the existing sounds
+x = {PinkNoise.ar * 0.1}.play;   // evaluate this line a few times.
+
+/*
+plotTree might look like this:
+     Synth("temp__0" : 1000)
+     Synth("temp__1" : 1001)
+     Synth("temp__2" : 1002)
+     Synth("temp__3" : 1003)
+     Synth("temp__4" : 1004)
+*/
+
+// By assigning to the same x each time we evaluate we lose references to the preceding
+// synth assigned to x. Now if we want to free the synths, we can only stop the last
+// synth using x.free.
+x.free;
+
+// In this scenario the simplest way to kill the synths is to detache all synths on the server
+s.freeAll;  // this is quite drastic because it will also free (wanted) synths and groups on the server.
+
+
+
+
 // Env Arguments
 (
 {
