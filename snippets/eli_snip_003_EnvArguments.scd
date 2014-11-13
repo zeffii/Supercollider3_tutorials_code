@@ -3,6 +3,8 @@
            SuperCollider Tutorial: 4. Envelopes and doneAction
            https://www.youtube.com/watch?v=-wDAPo9hpCg
 
+           this snippet is by no means complete.
+
 */
 
 s.boot;
@@ -35,6 +37,8 @@ x.free;
      Synth("temp__4" : 1004)
 
    they are all still on the server, even when they can't be heard.
+   > the synth is still running , and it is outputting 0s at the audio rate, which means
+   > it's still using cpu cycles.
 */
 
 // By assigning to the same x each time we evaluated we lost references to the preceding
@@ -44,8 +48,11 @@ x.free;
 
 // In this scenario the simplest way to kill the synths is to detache all synths on the server
 s.freeAll;  // this is quite drastic because it will free all synths and groups on the server.
+            // or cmd + period / ctrl+period
+
 
 /*
+
     doneAction (see docs)
     this action allows us to free a synth depending on a given cue
 
