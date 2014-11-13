@@ -1,7 +1,6 @@
 /*
 
            SuperCollider Tutorial: 4. Envelopes and doneAction
-
            https://www.youtube.com/watch?v=-wDAPo9hpCg
 
 */
@@ -9,36 +8,51 @@
 s.boot;
 s.plotTree;   // you want to see which synths are present on the server
 
-// evaluate this line once, and you'll see a Synth on the plotTree;
-x = {PinkNoise.ar * 0.5}.play;    // plotTree might show: Synth("temp__0" : 1000)
+// evaluate this blok once, and you'll see a Synth on the plotTree;
+// plotTree might show: Synth("temp__0" : 1000)
+(
+x = {
+	var sig, env;
+	env = Line.kr(1, 0, 1);
+	sig = Pulse.ar(ExpRand(30, 500)) * env;
 
-// because we just have one synth, we can stop the pinknoise by accessing the variable x
+}.play;
+)
+
+// you notice the synth stays on the server as it is still visible on
+// the plotTree, even if we don't hear it. Because we just have one synth, we can
+// stop the synth by accessing the variable we assigned it to; x
 x.free;
 
-// however, if you evaluate the pinknoise several times without first freeing the existing sounds
-x = {PinkNoise.ar * 0.1}.play;   // evaluate this line a few times.
-
 /*
-plotTree might look like this:
+   however, if you evaluate the the blok several times without first freeing
+   the existing synths then the plotTree might look like this:
+
      Synth("temp__0" : 1000)
      Synth("temp__1" : 1001)
      Synth("temp__2" : 1002)
      Synth("temp__3" : 1003)
      Synth("temp__4" : 1004)
+
+   they are all still on the server, even when they can't be heard.
 */
 
-// By assigning to the same x each time we evaluate we lose references to the preceding
-// synth assigned to x. Now if we want to free the synths, we can only stop the last
-// synth using x.free.
+// By assigning to the same x each time we evaluated we lost references to the preceding
+// synth. Now if we want to free the synths we're stuck, we can only stop the last synth
+// using x.free.
 x.free;
 
 // In this scenario the simplest way to kill the synths is to detache all synths on the server
-s.freeAll;  // this is quite drastic because it will also free (wanted) synths and groups on the server.
+s.freeAll;  // this is quite drastic because it will free all synths and groups on the server.
 
+/*
+    doneAction (see docs)
+    this action allows us to free a synth depending on a given cue
 
+*/
 
-
-// Env Arguments
+//  below, when EnvGen is completed, doneAction: 2 will remove the synth from the server.
+//  You'll see it appear on the plotTree and then vanish when it ends.
 (
 {
 	var sig, env;
@@ -47,7 +61,13 @@ s.freeAll;  // this is quite drastic because it will also free (wanted) synths a
 }.play
 )
 
-// Lets provide our own
+
+/*
+   Envelopes
+
+*/
+
+// Lets provide our own envelope.
 // note 3rd argument controls the strength of the curvature
 Env.new([0, 1, 0.2, 0], [0.5, 1, 2]).plot;
 Env.new([0, 1, 0.2, 0], [0.5, 1, 2], [3, -1, 0]).plot;
