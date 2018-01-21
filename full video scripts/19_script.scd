@@ -1,4 +1,4 @@
-[serial monitor to wrong rate]
+[set serial monitor to wrong rate]
 
 Hey everybody, welcome to tutorial 19. In this video we'll take an introductory look at the Arduino platform and how it integrates with SuperCollider. Arduino is an open-source hardware/software platform for prototyping electronics, typically used for interactive projects with sensors, motors, LEDs, etc. As far as Arduino boards go, there's a pretty big variety, as we can see on the Arduino website. For this video, I'm going to be using the Mega 2560, because that's what I happen to have on hand at the moment. As you can see, it's got a USB port for connecting to a computer, which I'll do right now, and doing this also powers the board, as we can see from the little lights that come on, which is usually a good sign.
 
